@@ -28,7 +28,7 @@ func BenchmarkFloor(t *testing.B) {
 			}
 		}
 		for _, point := range floors[shape] {
-			board[point.i+1][point.j] = 'O'
+			board[point.i][point.j] = 'O'
 		}
 		for i := range board {
 			for j := range board[i] {
