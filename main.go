@@ -9,12 +9,6 @@ func main() {
 	tetris := tetrio.NewTetris(20, 10)
 	fmt.Println(&tetris)
 
-	for {
-		c, s := 0, 0
-		fmt.Scan(&c, &s)
-		if !tetris.Drop(c, s) {
-			fmt.Println("You lose")
-		}
-		fmt.Println(&tetris)
-	}
+	column, shapeID, score := tetris.FindMove([]int8{tetrio.I0Shape, tetrio.S0Shape, tetrio.J0Shape, tetrio.L0Shape, tetrio.T0Shape})
+	fmt.Printf("Column: %v\nShapeID: %v\nScore: %v\n", column, shapeID, score)
 }

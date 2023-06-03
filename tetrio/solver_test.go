@@ -7,9 +7,9 @@ import (
 
 func BenchmarkDimensions(t *testing.B) {
 	t.ResetTimer()
-	for shape := 0; shape < kShapeSize; shape++ {
-		for i := 0; i <= bounds[shape].i; i++ {
-			for j := 0; j <= bounds[shape].j; j++ {
+	for shape := int8(0); shape < kShapeSize; shape++ {
+		for i := int32(0); i <= bounds[shape].i; i++ {
+			for j := int32(0); j <= bounds[shape].j; j++ {
 				fmt.Print("O")
 			}
 			fmt.Println()
@@ -20,7 +20,7 @@ func BenchmarkDimensions(t *testing.B) {
 
 func BenchmarkFloor(t *testing.B) {
 	t.ResetTimer()
-	for shape := 0; shape < kShapeSize; shape++ {
+	for shape := int8(0); shape < kShapeSize; shape++ {
 		board := [5][5]byte{}
 		for i := range board {
 			for j := range board[i] {
@@ -42,7 +42,7 @@ func BenchmarkFloor(t *testing.B) {
 
 func BenchmarkShape(t *testing.B) {
 	t.ResetTimer()
-	for shape := 0; shape < kShapeSize; shape++ {
+	for shape := int8(0); shape < kShapeSize; shape++ {
 		board := [5][5]byte{}
 		for i := range board {
 			for j := range board[i] {
@@ -60,4 +60,14 @@ func BenchmarkShape(t *testing.B) {
 		}
 		fmt.Println()
 	}
+}
+
+func BenchmarkSearch(t *testing.B) {
+	tetris := NewTetris(20, 10)
+
+	t.ResetTimer()
+	column, shapeID, score := tetris.FindMove([]int8{I0Shape, S0Shape, J0Shape, L0Shape, T0Shape})
+	t.StopTimer()
+
+	fmt.Printf("Column: %v\nShapeID: %v\nScore: %v\n", column, shapeID, score)
 }
