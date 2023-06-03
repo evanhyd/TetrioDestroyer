@@ -1,79 +1,218 @@
 package tetrio
 
 import (
+	"fmt"
 	"strings"
 )
 
-type Tetris struct {
-	board [][]bool
+const (
+	I0Shape = iota
+	I90Shape
+	I180Shape
+	I270Shape
+
+	J0Shape
+	J90Shape
+	J180Shape
+	J270Shape
+
+	L0Shape
+	L90Shape
+	L180Shape
+	L270Shape
+
+	O0Shape
+	O90Shape
+	O180Shape
+	O270Shape
+
+	T0Shape
+	T90Shape
+	T180Shape
+	T270Shape
+
+	S0Shape
+	S90Shape
+	S180Shape
+	S270Shape
+
+	Z0Shape
+	Z90Shape
+	Z180Shape
+	Z270Shape
+
+	kShapeSize
+)
+
+type Pair struct {
+	i, j int
 }
 
-func NewTetris(row, col int) Tetris {
-	board := make([][]bool, row)
+var bounds = [kShapeSize]Pair{
+	{3, 0}, {0, 3}, {3, 0}, {0, 3},
+	{2, 1}, {1, 2}, {2, 1}, {1, 2},
+	{2, 1}, {1, 2}, {2, 1}, {1, 2},
+	{1, 1}, {1, 1}, {1, 1}, {1, 1},
+	{1, 2}, {2, 1}, {1, 2}, {2, 1},
+	{1, 2}, {2, 1}, {1, 2}, {2, 1},
+	{1, 2}, {2, 1}, {1, 2}, {2, 1},
+}
+var floors = [kShapeSize][]Pair{
+	{{-1, 0}},
+	{{-1, 0}, {-1, 1}, {-1, 2}, {-1, 3}},
+	{{-1, 0}},
+	{{-1, 0}, {-1, 1}, {-1, 2}, {-1, 3}},
+
+	{{-1, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}, {-1, 2}},
+	{{-1, 0}, {1, 1}},
+	{{0, 0}, {0, 1}, {-1, 2}},
+
+	{{-1, 0}, {-1, 1}},
+	{{-1, 0}, {0, 1}, {0, 2}},
+	{{1, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}, {-1, 2}},
+
+	{{-1, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}},
+
+	{{0, 0}, {-1, 1}, {0, 2}},
+	{{0, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}, {-1, 2}},
+	{{-1, 0}, {0, 1}},
+
+	{{-1, 0}, {-1, 1}, {0, 2}},
+	{{0, 0}, {-1, 1}},
+	{{-1, 0}, {-1, 1}, {0, 2}},
+	{{0, 0}, {-1, 1}},
+
+	{{0, 0}, {-1, 1}, {-1, 2}},
+	{{-1, 0}, {0, 1}},
+	{{0, 0}, {-1, 1}, {-1, 2}},
+	{{-1, 0}, {0, 1}},
+}
+
+var shapes = [kShapeSize][]Pair{
+	{{0, 0}, {1, 0}, {2, 0}, {3, 0}},
+	{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
+	{{0, 0}, {1, 0}, {2, 0}, {3, 0}},
+	{{0, 0}, {0, 1}, {0, 2}, {0, 3}},
+
+	{{0, 0}, {0, 1}, {1, 1}, {2, 1}},
+	{{0, 0}, {0, 1}, {0, 2}, {1, 0}},
+	{{0, 0}, {1, 0}, {2, 0}, {2, 1}},
+	{{1, 0}, {1, 1}, {1, 2}, {0, 2}},
+
+	{{0, 0}, {0, 1}, {1, 0}, {2, 0}},
+	{{0, 0}, {1, 0}, {1, 1}, {1, 2}},
+	{{2, 0}, {2, 1}, {1, 1}, {0, 1}},
+	{{0, 0}, {0, 1}, {0, 2}, {1, 2}},
+
+	{{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+	{{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+	{{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+	{{0, 0}, {0, 1}, {1, 0}, {1, 1}},
+
+	{{1, 0}, {1, 1}, {1, 2}, {0, 1}},
+	{{1, 0}, {0, 1}, {1, 1}, {2, 1}},
+	{{0, 0}, {0, 1}, {0, 2}, {1, 1}},
+	{{0, 0}, {1, 0}, {2, 0}, {1, 1}},
+
+	{{0, 0}, {0, 1}, {1, 1}, {1, 2}},
+	{{1, 0}, {2, 0}, {0, 1}, {1, 1}},
+	{{0, 0}, {0, 1}, {1, 1}, {1, 2}},
+	{{1, 0}, {2, 0}, {0, 1}, {1, 1}},
+
+	{{1, 0}, {1, 1}, {0, 1}, {0, 2}},
+	{{0, 0}, {1, 0}, {1, 1}, {2, 1}},
+	{{1, 0}, {1, 1}, {0, 1}, {0, 2}},
+	{{0, 0}, {1, 0}, {1, 1}, {2, 1}},
+}
+
+type Tetris struct {
+	board [][]bool
+	rows  int
+	cols  int
+	score int
+}
+
+func NewTetris(rows, cols int) Tetris {
+	board := make([][]bool, rows+5)
 	for i := range board {
-		board[i] = make([]bool, col)
+		board[i] = make([]bool, cols)
 	}
-	return Tetris{board}
+	return Tetris{board, rows, cols, 0}
 }
 
 func CopyTetris(tetris *Tetris) Tetris {
-	board := make([][]bool, tetris.rows())
+	board := make([][]bool, len(tetris.board))
 	for i := range board {
-		board[i] = make([]bool, tetris.cols())
+		board[i] = make([]bool, len(tetris.board[i]))
 		copy(board[i], tetris.board[i])
 	}
-	return Tetris{board}
+	return Tetris{board, tetris.rows, tetris.cols, tetris.score}
 }
 
-func (tetris *Tetris) rows() int {
-	return len(tetris.board)
+func (tetris *Tetris) isInBound(i int, j int, shape int) bool {
+	return 0 <= i && i+bounds[shape].i < len(tetris.board) && 0 <= j && j+bounds[shape].j < len(tetris.board[0])
 }
 
-func (tetris *Tetris) cols() int {
-	return len(tetris.board[0])
+func (tetris *Tetris) isOnFloor(i int, j int, shape int) bool {
+	for _, point := range floors[shape] {
+		if i+point.i < 0 || tetris.board[i+point.i][j+point.j] {
+			return true
+		}
+	}
+	return false
+}
+
+func (tetris *Tetris) isRowFilled(row int) bool {
+	for j := 0; j < tetris.cols; j++ {
+		if !tetris.board[row][j] {
+			return false
+		}
+	}
+	return true
 }
 
 func (tetris *Tetris) removeRow(row int) {
-	lastRow := tetris.rows() - 1
-	for i := row; i < lastRow; i++ {
+	for i := row; i < tetris.rows; i++ {
 		copy(tetris.board[i], tetris.board[i+1])
 	}
-	for i := range tetris.board[lastRow] {
-		tetris.board[lastRow][i] = false
+}
+
+func (tetris *Tetris) putShape(i int, j int, shape int) {
+	for _, point := range shapes[shape] {
+		tetris.board[i+point.i][j+point.j] = true
+	}
+	for tetris.isRowFilled(i) {
+		tetris.removeRow(i)
+		tetris.score += 1
 	}
 }
 
-func (tetris *Tetris) checkRowFilled(row int) bool {
-	filled := true
-	for j := range tetris.board[row] {
-		if !tetris.board[row][j] {
-			filled = false
-			break
-		}
+func (tetris *Tetris) Drop(col int, shape int) bool {
+	if !tetris.isInBound(tetris.rows, col, shape) {
+		return false
 	}
-	return filled
-}
 
-func (tetris *Tetris) DropDot(col int) {
-	for i := tetris.rows() - 1; i >= 0; i-- {
-		if i-1 < 0 || tetris.board[i-1][col] {
-			tetris.board[i][col] = true
+	for i := tetris.rows; i >= 0; i-- {
+		if tetris.isOnFloor(i, col, shape) {
+			if i < tetris.rows {
+				tetris.putShape(i, col, shape)
+				return true
+			}
+			return false
 		}
 	}
-}
-
-func (tetris *Tetris) Drop(col int, shape int) {
-	for i := tetris.rows() - 1; i >= 0; i-- {
-		if FitDimension(tetris, i, col, shape) && OnFloor(tetris, i, col, shape) {
-			*tetris = CombineShape(tetris, i, col, shape)
-			return
-		}
-	}
+	return false
 }
 
 func (tetris *Tetris) String() string {
 	builder := strings.Builder{}
-	for i := tetris.rows() - 1; i >= 0; i-- {
+	for i := tetris.rows; i >= 0; i-- {
 		for j := range tetris.board[i] {
 			var symbol byte
 			if tetris.board[i][j] {
@@ -85,5 +224,6 @@ func (tetris *Tetris) String() string {
 		}
 		builder.WriteByte('\n')
 	}
+	builder.WriteString(fmt.Sprintf("Score: %v\n", tetris.score))
 	return builder.String()
 }

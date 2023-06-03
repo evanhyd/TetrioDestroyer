@@ -8,8 +8,8 @@ import (
 func BenchmarkDimensions(t *testing.B) {
 	t.ResetTimer()
 	for shape := 0; shape < kShapeSize; shape++ {
-		for i := 0; i <= dims[shape].i; i++ {
-			for j := 0; j <= dims[shape].j; j++ {
+		for i := 0; i <= bounds[shape].i; i++ {
+			for j := 0; j <= bounds[shape].j; j++ {
 				fmt.Print("O")
 			}
 			fmt.Println()

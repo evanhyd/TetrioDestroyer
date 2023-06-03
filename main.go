@@ -6,13 +6,15 @@ import (
 )
 
 func main() {
-	tetris := tetrio.NewTetris(10, 10)
+	tetris := tetrio.NewTetris(20, 10)
 	fmt.Println(&tetris)
 
 	for {
 		c, s := 0, 0
 		fmt.Scan(&c, &s)
-		tetris.Drop(c, s)
+		if !tetris.Drop(c, s) {
+			fmt.Println("You lose")
+		}
 		fmt.Println(&tetris)
 	}
 }
