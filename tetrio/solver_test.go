@@ -2,12 +2,13 @@ package tetrio
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
-func BenchmarkDimensions(t *testing.B) {
+func BenchmarkBounds(t *testing.B) {
 	t.ResetTimer()
-	for shape := int8(0); shape < kShapeSize; shape++ {
+	for shape := int32(0); shape < kShapeSize; shape++ {
 		for i := int32(0); i <= bounds[shape].i; i++ {
 			for j := int32(0); j <= bounds[shape].j; j++ {
 				fmt.Print("O")
@@ -18,9 +19,9 @@ func BenchmarkDimensions(t *testing.B) {
 	}
 }
 
-func BenchmarkFloor(t *testing.B) {
+func BenchmarkFloors(t *testing.B) {
 	t.ResetTimer()
-	for shape := int8(0); shape < kShapeSize; shape++ {
+	for shape := int32(0); shape < kShapeSize; shape++ {
 		board := [5][5]byte{}
 		for i := range board {
 			for j := range board[i] {
@@ -40,10 +41,10 @@ func BenchmarkFloor(t *testing.B) {
 	}
 }
 
-func BenchmarkShape(t *testing.B) {
+func BenchmarkShapes(t *testing.B) {
 	fmt.Println("BenchmarkShape----------------------------------")
-	for baseShape := int8(0); baseShape < kBaseShapSize; baseShape++ {
-		for r := int8(0); r < rotations[baseShape]; r++ {
+	for baseShape := int32(0); baseShape < kBaseShapSize; baseShape++ {
+		for r := int32(0); r < rotations[baseShape]; r++ {
 			shape := 4*baseShape + r
 			board := [5][5]byte{}
 			for i := range board {
@@ -67,17 +68,23 @@ func BenchmarkShape(t *testing.B) {
 
 func BenchmarkSearchStressTest(t *testing.B) {
 	tetris := NewTetris(20, 10)
-
-	t.ResetTimer()
-	column, shapeID, score := tetris.FindMove([]int8{T0Shape, T0Shape, T0Shape, T0Shape, T0Shape})
-	t.StopTimer()
-
+	column, shapeID, score := tetris.FindMove([]int32{T0Shape, T0Shape, T0Shape, T0Shape, T0Shape})
 	fmt.Printf("Column: %v\nShapeID: %v\nScore: %v\n", column, shapeID, score)
 }
 
-func BenchmarkSearchCorrectnessTest(t *testing.B) {
-	fmt.Println("BenchmarkSearchCorrectnessTest----------------------------------")
+func BenchmarkPlayTest(b *testing.B) {
 	tetris := NewTetris(20, 10)
-	column, shapeID, score := tetris.FindMove([]int8{L90Shape})
-	fmt.Printf("Column: %v\nShapeID: %v\nScore: %v\n", column, shapeID, score)
+	shapes := []int32{rand.Int31n(kShapeSize), rand.Int31n(kShapeSize), rand.Int31n(kShapeSize), rand.Int31n(kShapeSize), rand.Int31n(kShapeSize)}
+
+	for round := 0; round < 5; round++ {
+		column, shape, score := tetris.FindMove(shapes)
+		tetris.Drop(column, shape)
+		fmt.Println(&tetris)
+		shapes = append(shapes[1:], rand.Int31n(rand.Int31n(kShapeSize)))
+		fmt.Printf("Column: %v\nShapeID: %v\nScore: %v\nRound: %v\n", column, shape, score, round)
+		if shape == -1 {
+			fmt.Println("GG")
+			break
+		}
+	}
 }
