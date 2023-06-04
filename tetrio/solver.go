@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/bits"
 	"strings"
+	"sync"
 )
 
 const (
@@ -147,21 +148,11 @@ func NewTetris(rows, cols int32) Tetris {
 	return Tetris{board, rows, cols, [][]uint32{}}
 }
 
-/*
-*
-32 bits in total:
-
-	8        8        8       8
-
-IIIIIIII JJJJJJJJ SSSSSSSS RRRRRRRR
-*/
-// func encodeMove(i, j, shape, rowsEliminated uint32) uint32 {
-// 	return i<<24 | j<<16 | shape<<8 | rowsEliminated
-// }
-
-// func decodeMove(move uint32) (i int32, j int32, shape int8, rowsEliminated int8) {
-// 	return int32(move >> 24 & 0xff), int32(move >> 16 & 0xff), int8(move >> 8), int8(move)
-// }
+func CopyTetris(tetris *Tetris) Tetris {
+	board := make([]uint32, tetris.cols)
+	copy(board, tetris.board)
+	return Tetris{board, tetris.rows, tetris.cols, [][]uint32{}}
+}
 
 func (tetris *Tetris) at(row, col int32) uint32 {
 	return tetris.board[col] >> row & 1
@@ -176,11 +167,11 @@ func (tetris *Tetris) isInBound(i, j int32, shape int8) bool {
 }
 
 func (tetris *Tetris) isRowFilled(row int32) bool {
-	filled := uint32(0)
+	count := uint32(0)
 	for i := range tetris.board {
-		filled |= (tetris.board[i] >> row) & 1
+		count += (tetris.board[i] >> row) & 1
 	}
-	return filled == 0
+	return count == uint32(tetris.cols)
 }
 
 func (tetris *Tetris) doMove(i, j int32, shape int8) {
@@ -246,20 +237,20 @@ func (tetris *Tetris) String() string {
 }
 
 func (tetris *Tetris) FindMove(shapes []int8) (int32, int8, int32) {
-	var recur func(depth int) int32
-	recur = func(depth int) int32 {
+
+	var search func(tetris *Tetris, depth int) int32
+	search = func(tetris *Tetris, depth int) int32 {
 		if depth == len(shapes) {
-			return tetris.Evaluate()
+			return tetris.evaluate()
 		}
 
 		mScore := int32(math.MinInt32)
-
-		baseShape := shapes[0] / 4
+		baseShape := shapes[depth] / 4
 		for r := int8(0); r < rotations[baseShape]; r++ {
-			shapeID := baseShape + r
+			shapeID := 4*baseShape + r
 			for col := int32(0); col < tetris.cols; col++ {
 				if tetris.Drop(col, shapeID) {
-					if score := recur(depth + 1); score > mScore {
+					if score := search(tetris, depth+1); score > mScore {
 						mScore = score
 					}
 					tetris.UnDrop()
@@ -269,25 +260,62 @@ func (tetris *Tetris) FindMove(shapes []int8) (int32, int8, int32) {
 		return mScore
 	}
 
+	type SearchResult struct {
+		column  int32
+		shapeID int8
+		score   int32
+	}
+
+	results := make(chan SearchResult, 4*10)
+	waits := sync.WaitGroup{}
+	baseShape := shapes[0] / 4
+	for r := int8(0); r < rotations[baseShape]; r++ {
+		for col := int32(0); col < tetris.cols; col++ {
+			waits.Add(1)
+			go func(tetris Tetris, column int32, shapeID int8) {
+				defer waits.Done()
+				if tetris.Drop(column, shapeID) {
+					results <- SearchResult{column, shapeID, search(&tetris, 1)}
+					tetris.UnDrop()
+				}
+			}(CopyTetris(tetris), col, 4*baseShape+r)
+		}
+	}
+
+	waits.Wait()
+	close(results)
+
 	mColumn := int32(-1)
 	mShapeID := int8(-1)
 	mScore := int32(math.MinInt32)
-
-	baseShape := shapes[0] / 4
-	for r := int8(0); r < rotations[baseShape]; r++ {
-		shapeID := baseShape + r
-		for col := int32(0); col < tetris.cols; col++ {
-			if tetris.Drop(col, shapeID) {
-				if score := recur(1); score > mScore {
-					mColumn, mShapeID, mScore = col, shapeID, score
-				}
-				tetris.UnDrop()
-			}
+	for result := range results {
+		if result.score > mScore {
+			mColumn = result.column
+			mShapeID = result.shapeID
+			mScore = result.score
 		}
 	}
 	return mColumn, mShapeID, mScore
 }
 
-func (tetris *Tetris) Evaluate() int32 {
-	return 0
+func (tetris *Tetris) evaluate() int32 {
+
+	score := 0
+
+	//zeros
+	for _, col := range tetris.board {
+		zeros := bits.Len32(col) - bits.OnesCount32(col)
+		score -= 20 * zeros
+	}
+
+	//curvy surface
+	for j := int32(0); j < tetris.cols-1; j++ {
+		dH := bits.Len32(tetris.board[j]) - bits.Len32(tetris.board[j+1])
+		if dH < 0 {
+			dH = -dH
+		}
+		score -= 2 * dH * dH
+	}
+
+	return int32(score)
 }
