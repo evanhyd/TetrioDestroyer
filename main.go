@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"tetriodestroyer/tetrio"
+	"time"
 )
 
 func main() {
@@ -23,11 +25,12 @@ func main() {
 				} else {
 					fmt.Println("GG")
 				}
+				time.Sleep(10 * time.Millisecond)
 			} else {
-				// log.Println("can not find shapes")
+				log.Println("can not find shapes")
 			}
 		} else {
-			// log.Println("can find current shape")
+			log.Println("can find current shape")
 		}
 	}
 }
