@@ -7,31 +7,37 @@ import (
 )
 
 func SendMove(rotation, column int32) {
-	keyboard, err := sendkeys.NewKBWrapWithOptions()
+
+	const (
+		kDelay = 10
+	)
+
+	keyboard, err := sendkeys.NewKBWrapWithOptions(sendkeys.NoDelay)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// const kDelay = 200
 	// for r := int32(0); r < rotation; r++ {
 	// 	keyboard.Type("r")
 	// 	time.Sleep(kDelay * time.Millisecond)
 	// }
-	// for a := 0; a < 5; a++ {
-	// 	keyboard.Type("a")
-	// 	time.Sleep(kDelay * time.Millisecond)
-	// }
+
+	// keyboard.Type("aaaaaa")
+	// time.Sleep(kDelay * time.Millisecond)
+
 	// for c := int32(0); c < column; c++ {
 	// 	keyboard.Type("d")
 	// 	time.Sleep(kDelay * time.Millisecond)
 	// }
+
 	// keyboard.Type("w")
+	// time.Sleep(kDelay * time.Millisecond)
 
 	input := ""
 	for r := int32(0); r < rotation; r++ {
 		input += "r"
 	}
-	input += "aaaaa"
+	input += "aaaaaa"
 	for c := int32(0); c < column; c++ {
 		input += "d"
 	}

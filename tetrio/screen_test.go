@@ -37,8 +37,8 @@ func BenchmarkGetTetrioBoard(b *testing.B) {
 	fmt.Println("Printing tetrio board-------------------")
 	board, currentShape := GetTetrioBoard()
 	if board != nil {
-		tetris := NewTetris(23, 10)
-		tetris.SetBoard(board)
+		tetris := NewTetris()
+		// tetris.SetBoard(board)
 		fmt.Println(&tetris)
 		fmt.Println("Shape", currentShape)
 	} else {

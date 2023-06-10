@@ -94,7 +94,7 @@ Loop:
 		board[i] = make([]bool, kColumn)
 	}
 
-	for y += blockY * int(bounds[currentShape].i+1); y < img.Rect.Dy(); y += blockY {
+	for y += blockY * int(shapeHeightTable[currentShape]+1); y < img.Rect.Dy(); y += blockY {
 		i := kRow - (y / blockY) - 1
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
 			board[i][x/blockX] = getShape(img.RGBAAt(x, y)) != EmptyShape
