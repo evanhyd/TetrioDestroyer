@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	kBoardRows    = 23
+	kBoardRows    = 20
 	kBoardColumns = 10
+	kMaxDepth     = 8
 )
 
 const (
@@ -153,13 +154,37 @@ var shapeWidthTable = [kShapeSize]int32{
 	2, 1,
 }
 
-var shapeInColumnBoundTable [kShapeSize][kBoardColumns]bool
+var shapeColumnTable = [kShapeSize][]int32{
+	{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+	{0, 1, 2, 3, 4, 5, 6},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+	{0, 1, 2, 3, 4, 5, 6, 7},
+	{0, 1, 2, 3, 4, 5, 6, 7, 8},
+}
+
+const kTableSize = 1 << (kBoardRows + 3)
+
+var columnHeightTable = [kTableSize]int32{}
+var columnHoleTable = [kTableSize]int32{}
 
 func init() {
-	for shape := int32(0); shape < kShapeSize; shape++ {
-		for j := int32(0); j < kBoardColumns; j++ {
-			shapeInColumnBoundTable[shape][j] = j+shapeWidthTable[shape] < kBoardColumns
-		}
+	for n := uint32(0); n < kTableSize; n++ {
+		columnHeightTable[n] = int32(bits.Len32(n))
+		columnHoleTable[n] = columnHeightTable[n] - int32(bits.OnesCount32(n))
 	}
 }
 
@@ -170,19 +195,17 @@ type SearchResult struct {
 }
 
 type Tetris struct {
-	board   []uint32
-	history [][]uint32
+	board   [kBoardColumns]uint32
+	history [kMaxDepth][kBoardColumns]uint32
+	depth   int32
 }
 
 func NewTetris() Tetris {
-	board := make([]uint32, kBoardColumns)
-	return Tetris{board, [][]uint32{}}
+	return Tetris{}
 }
 
 func CopyTetris(tetris *Tetris) Tetris {
-	board := make([]uint32, kBoardColumns)
-	copy(board, tetris.board)
-	return Tetris{board, [][]uint32{}}
+	return Tetris{board: tetris.board}
 }
 
 func (tetris *Tetris) SetBoard(bitmap [][]uint32) {
@@ -194,12 +217,14 @@ func (tetris *Tetris) SetBoard(bitmap [][]uint32) {
 	}
 }
 
-func (tetris *Tetris) set(row, col int32) {
-	tetris.board[col] |= 1 << row
+func (tetris *Tetris) SaveState() {
+	tetris.history[tetris.depth] = tetris.board
+	tetris.depth++
 }
 
-func (tetris *Tetris) at(row, col int32) uint32 {
-	return tetris.board[col] >> row & 1
+func (tetris *Tetris) RollbackState() {
+	tetris.depth--
+	tetris.board = tetris.history[tetris.depth]
 }
 
 func (tetris *Tetris) isRowFilled(row int32) bool {
@@ -210,12 +235,12 @@ func (tetris *Tetris) isRowFilled(row int32) bool {
 	return count == kBoardColumns
 }
 
-func (tetris *Tetris) DoMove(shape int32, column int32) bool {
+func (tetris *Tetris) MakeMove(shape int32, column int32) bool {
 
 	//find the column that supports the shape
 	collisionRow := int32(-1)
 	for _, point := range collisionTable[shape] {
-		columnHeight := int32(bits.Len32(tetris.board[column+point.j]))
+		columnHeight := columnHeightTable[tetris.board[column+point.j]]
 		if row := columnHeight - point.i; row > collisionRow {
 			collisionRow = columnHeight
 		}
@@ -223,29 +248,21 @@ func (tetris *Tetris) DoMove(shape int32, column int32) bool {
 
 	//placement within the board, not dead
 	if collisionRow < kBoardRows {
-		state := make([]uint32, kBoardColumns)
-		copy(state, tetris.board)
-		tetris.history = append(tetris.history, state)
 
 		for _, point := range occupancyTable[shape] {
-			tetris.set(collisionRow+point.i, column+point.j)
+			tetris.board[column+point.j] |= 1 << (collisionRow + point.i)
 		}
 
 		for rowOffset := shapeHeightTable[shape]; rowOffset >= 0; rowOffset-- {
-			if i := collisionRow + rowOffset; tetris.isRowFilled(i) {
-				for j := range tetris.board {
-					tetris.board[j] = (tetris.board[j] & (1<<i - 1)) | (tetris.board[j] >> (i + 1) << i)
+			if row := collisionRow + rowOffset; tetris.isRowFilled(row) {
+				for j, column := range tetris.board {
+					tetris.board[j] = (column & (1<<row - 1)) | (column >> (row + 1) << row)
 				}
 			}
 		}
 		return true
 	}
 	return false
-}
-
-func (tetris *Tetris) UndoMove() {
-	tetris.board = tetris.history[len(tetris.history)-1]
-	tetris.history = tetris.history[:len(tetris.history)-1]
 }
 
 func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
@@ -258,13 +275,14 @@ func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
 
 		mScore := int32(math.MinInt32)
 		for _, variation := range variationTable[availableShapes[depth]] {
-			for column := int32(0); column < kBoardColumns; column++ {
-				if shapeInColumnBoundTable[variation][column] && tetris.DoMove(variation, column) {
+			for _, column := range shapeColumnTable[variation] {
+				tetris.SaveState()
+				if tetris.MakeMove(variation, column) {
 					if score := search(tetris, depth+1); score > mScore {
 						mScore = score
 					}
-					tetris.UndoMove()
 				}
+				tetris.RollbackState()
 			}
 		}
 		return mScore
@@ -274,17 +292,16 @@ func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
 	waits := sync.WaitGroup{}
 
 	for _, variation := range variationTable[availableShapes[0]] {
-		for column := int32(0); column < kBoardColumns; column++ {
-			if shapeInColumnBoundTable[variation][column] {
-				waits.Add(1)
-				go func(tetris Tetris, shape int32, column int32) {
-					defer waits.Done()
-					if tetris.DoMove(shape, column) {
-						results <- SearchResult{shape, column, search(&tetris, 1)}
-						tetris.UndoMove()
-					}
-				}(CopyTetris(tetris), variation, column)
-			}
+		waits.Add(len(shapeColumnTable[variation]))
+		for _, column := range shapeColumnTable[variation] {
+			go func(tetris Tetris, shape int32, column int32) {
+				tetris.SaveState()
+				if tetris.MakeMove(shape, column) {
+					results <- SearchResult{shape, column, search(&tetris, 1)}
+				}
+				tetris.RollbackState()
+				waits.Done()
+			}(CopyTetris(tetris), variation, column)
 		}
 	}
 
@@ -301,20 +318,17 @@ func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
 }
 
 func (tetris *Tetris) evaluate() int32 {
-	score := 0
+	score := int32(0)
 
 	for j := int32(0); j < kBoardColumns; j++ {
-		height := bits.Len32(tetris.board[j])
-		zeros := height - bits.OnesCount32(tetris.board[j])
-		score -= 20 * zeros
-
+		score -= 20 * columnHoleTable[tetris.board[j]]
 		if j < kBoardColumns-1 {
-			dHeight := height - bits.Len32(tetris.board[j+1])
+			dHeight := columnHeightTable[tetris.board[j]] - columnHeightTable[tetris.board[j+1]]
 			score -= 2 * dHeight * dHeight
 		}
 	}
 
-	return int32(score)
+	return score
 }
 
 func (tetris *Tetris) String() string {
@@ -323,7 +337,7 @@ func (tetris *Tetris) String() string {
 	builder := strings.Builder{}
 	for i := int32(kBoardRows); i >= 0; i-- {
 		for j := int32(0); j < kBoardColumns; j++ {
-			builder.WriteByte(symbol[tetris.at(i, j)])
+			builder.WriteByte(symbol[tetris.board[j]>>i&1])
 		}
 		builder.WriteByte('\n')
 	}

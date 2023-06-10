@@ -24,7 +24,7 @@ func PlayTest() {
 		// fmt.Println(&tetris)
 		fmt.Printf("Result %+v - %v\n", result, round)
 		if result.Score != -1 {
-			tetris.DoMove(result.Shape, result.Column)
+			tetris.MakeMove(result.Shape, result.Column)
 			shapes = append(shapes[1:], rand.Int31n(kShapeSize))
 		} else {
 			fmt.Println("GG")

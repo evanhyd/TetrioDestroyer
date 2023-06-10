@@ -60,7 +60,7 @@ func BenchmarkOccupancy(t *testing.B) {
 	}
 }
 
-func BenchmarkSearchStressTest(t *testing.B) {
+func BenchmarkSearchStress(t *testing.B) {
 	const kDepth = 5
 	shapes := []int32{}
 	for i := 0; i < kDepth; i++ {
@@ -68,6 +68,29 @@ func BenchmarkSearchStressTest(t *testing.B) {
 	}
 
 	tetris := NewTetris()
+
+	t.ResetTimer()
 	result := tetris.FindMove(shapes)
-	fmt.Printf("Shape: %v\nColumn: %v\nScore: %v\n", result.Shape, result.Column, result.Score)
+	t.StopTimer()
+
+	fmt.Printf("Shape: %v\tColumn: %v\tScore: %v\n", result.Shape, result.Column, result.Score)
+	fmt.Println(t.Elapsed())
+}
+
+func BenchmarkSearchStressRounds(t *testing.B) {
+	const kDepth = 5
+	const kRound = 5
+
+	tetris := NewTetris()
+	shapes := []int32{}
+	for i := 0; i < kDepth; i++ {
+		shapes = append(shapes, T0Shape)
+	}
+
+	t.ResetTimer()
+	for round := 0; round < kRound; round++ {
+		tetris.FindMove(shapes)
+	}
+	t.StopTimer()
+	fmt.Println(t.Elapsed())
 }
