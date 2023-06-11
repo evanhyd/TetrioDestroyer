@@ -6,39 +6,21 @@ import (
 	"git.tcp.direct/kayos/sendkeys"
 )
 
-func SendMove(rotation, column int32) {
+func SendMove(result SearchResult, currentShape int32) {
+	period := int32(len(variationTable[currentShape]))
+	rotation := (result.Shape - currentShape + period) % period
 
-	const (
-		kDelay = 10
-	)
-
-	keyboard, err := sendkeys.NewKBWrapWithOptions(sendkeys.NoDelay)
+	keyboard, err := sendkeys.NewKBWrapWithOptions()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// for r := int32(0); r < rotation; r++ {
-	// 	keyboard.Type("r")
-	// 	time.Sleep(kDelay * time.Millisecond)
-	// }
-
-	// keyboard.Type("aaaaaa")
-	// time.Sleep(kDelay * time.Millisecond)
-
-	// for c := int32(0); c < column; c++ {
-	// 	keyboard.Type("d")
-	// 	time.Sleep(kDelay * time.Millisecond)
-	// }
-
-	// keyboard.Type("w")
-	// time.Sleep(kDelay * time.Millisecond)
 
 	input := ""
 	for r := int32(0); r < rotation; r++ {
 		input += "r"
 	}
 	input += "aaaaaa"
-	for c := int32(0); c < column; c++ {
+	for c := int32(0); c < result.Column; c++ {
 		input += "d"
 	}
 	input += "w"

@@ -73,7 +73,7 @@ func BenchmarkSearchStress(t *testing.B) {
 	result := tetris.FindMove(shapes)
 	t.StopTimer()
 
-	fmt.Printf("Shape: %v\tColumn: %v\tScore: %v\n", result.Shape, result.Column, result.Score)
+	fmt.Printf("Shape: %v\tColumn: %v\tEval: %v\n", result.Shape, result.Column, result.Eval)
 	fmt.Println(t.Elapsed())
 }
 

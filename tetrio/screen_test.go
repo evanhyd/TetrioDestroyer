@@ -38,7 +38,7 @@ func BenchmarkGetTetrioBoard(b *testing.B) {
 	board, currentShape := GetTetrioBoard()
 	if board != nil {
 		tetris := NewTetris()
-		// tetris.SetBoard(board)
+		tetris.SetBoard(board)
 		fmt.Println(&tetris)
 		fmt.Println("Shape", currentShape)
 	} else {
@@ -49,5 +49,7 @@ func BenchmarkGetTetrioBoard(b *testing.B) {
 func BenchmarkGetTetrioShapes(b *testing.B) {
 	fmt.Println("Printing tetrio shapes-------------------")
 	shapes := GetTetrioShapes()
-	fmt.Println(shapes)
+	for _, shape := range shapes {
+		fmt.Println(nameTable[shape])
+	}
 }
