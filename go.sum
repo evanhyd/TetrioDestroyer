@@ -1,5 +1,6 @@
 git.tcp.direct/kayos/sendkeys v0.0.0-20211216174833-565f782ccf21 h1:c8dSCGl3I3iM8bFz2lZTqKP2FE8kIy7AplNlM0YN9To=
 git.tcp.direct/kayos/sendkeys v0.0.0-20211216174833-565f782ccf21/go.mod h1:8yS2wQzBLToCpla1KRImKDhxb7fVZvXTpwMEi76saaA=
+github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807 h1:jdjd5e68T4R/j4PWxfZqcKY8KtT9oo8IPNVuV4bSXDQ=
 github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5 h1:Y5Q2mEwfzjMt5+3u70Gtw93ZOu2UuPeeeTBDntF7FoY=
 github.com/gen2brain/shm v0.0.0-20200228170931-49f9650110c5/go.mod h1:uF6rMu/1nvu+5DpiRLwusA6xB8zlkNoGzKn8lmYONUo=
 github.com/jezek/xgb v0.0.0-20210312150743-0e0f116e1240 h1:dy+DS31tGEGCsZzB45HmJJNHjur8GDgtRNX9U7HnSX4=

@@ -11,12 +11,12 @@ type GameState struct {
 	depth   int32
 }
 
-func (gm *GameState) saveState() {
+func (gm *GameState) save() {
 	gm.history[gm.depth] = gm.State
 	gm.depth++
 }
 
-func (gm *GameState) revertState() {
+func (gm *GameState) revert() {
 	gm.depth--
 	gm.State = gm.history[gm.depth]
 }

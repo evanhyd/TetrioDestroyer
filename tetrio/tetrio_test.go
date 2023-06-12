@@ -21,7 +21,7 @@ func BenchmarkGetTetrioBoardImage(b *testing.B) {
 }
 
 func BenchmarkGetTetrioShapesImage(b *testing.B) {
-	img, err := getTetrioShapesImage()
+	img, err := GetTetrioShapesImage()
 	if err != nil {
 		b.Error(err)
 	}

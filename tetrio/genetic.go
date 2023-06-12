@@ -1,7 +1,6 @@
 package tetrio
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -10,7 +9,7 @@ import (
 	"strings"
 )
 
-type Training struct {
+type Genetic struct {
 	fileName            string
 	population          int
 	mutationRate        float32
@@ -20,7 +19,7 @@ type Training struct {
 	strategies []EvaluationStrategy
 }
 
-func NewTraining(fileName string, population int, mutationRate float32, mutationMagnitude float32, roundsPerGeneration int) Training {
+func NewGeneticEvolution(fileName string, population int, mutationRate float32, mutationMagnitude float32, roundsPerGeneration int) Genetic {
 	parseFloat := func(str string) float32 {
 		val, err := strconv.ParseFloat(str, 32)
 		if err != nil {
@@ -49,19 +48,19 @@ func NewTraining(fileName string, population int, mutationRate float32, mutation
 		strategies = append(strategies, randomStrategy())
 	}
 
-	return Training{fileName, population, mutationRate, mutationMagnitude, roundsPerGeneration, strategies}
+	return Genetic{fileName, population, mutationRate, mutationMagnitude, roundsPerGeneration, strategies}
 }
 
-func (training *Training) Train() {
+func (training *Genetic) Train() {
 	for generation := 0; true; generation++ {
-		fmt.Println("generation", generation)
+		log.Println("generation", generation)
 		training.simulate()
-		fmt.Println("saving data", generation)
-		training.saveData()
+		log.Println("saving data", generation)
+		training.save()
 	}
 }
 
-func (training *Training) simulate() {
+func (training *Genetic) simulate() {
 	//simulate the games
 	type Rank struct {
 		index   int
@@ -75,26 +74,28 @@ func (training *Training) simulate() {
 	}
 	rank := make([]Rank, 0, training.population)
 	for i := range training.strategies {
-		fmt.Printf("%v / %v\n", i, training.population)
+		log.Printf("%v | %v\n", training.population, i)
 		rank = append(rank, Rank{i, training.fitness(training.strategies[i], shapes)})
 	}
 
 	//top 3 strategies survivor for another round
 	sort.Slice(rank, func(i, j int) bool { return rank[i].fitness > rank[j].fitness })
-	fmt.Printf("high score: %v\n", rank[0].fitness)
+	log.Printf("high score: %v\n", rank[0].fitness)
 	breeds := []EvaluationStrategy{
 		training.strategies[rank[0].index],
 		training.strategies[rank[1].index],
+		training.strategies[rank[2].index],
 	}
 
-	//distribute top 2 strategies's weight params to the top 25% until reaches 90% of the population, mutate if necessary
+	//distribute top 2 strategies's weight params to the top 25% until reaches 80% of the population, mutate by chance
 	canBreedPercentile := int(float32(training.population) * 0.25)
-	targetBreedPercentile := int(float32(training.population) * 0.90)
+	targetBreedPercentile := int(float32(training.population) * 0.80)
 
 	for len(breeds) < targetBreedPercentile {
 		breed := training.strategies[rank[rand.Intn(canBreedPercentile)].index]
 		crossGen := rand.Intn(len(breed.weights))
-		breed.weights[crossGen] = training.strategies[rank[rand.Intn(2)].index].weights[crossGen]
+		diff := (training.strategies[rank[rand.Intn(2)].index].weights[crossGen] - breed.weights[crossGen]) * 0.05
+		breed.weights[crossGen] += diff
 		if rand.Float32() < training.mutationRate {
 			diffMagnitude := breed.weights[crossGen] * (rand.Float32()*2*training.mutationMagnitude - training.mutationMagnitude)
 			breed.weights[crossGen] += diffMagnitude
@@ -110,8 +111,8 @@ func (training *Training) simulate() {
 	training.strategies = breeds
 }
 
-func (training *Training) fitness(strategy EvaluationStrategy, shapes []int32) int32 {
-	const kDepth = 4
+func (training *Genetic) fitness(strategy EvaluationStrategy, shapes []int32) int32 {
+	const kDepth = 2
 	tetris := Tetris{EvaluationStrategy: strategy}
 
 	round := int32(0)
@@ -122,15 +123,13 @@ func (training *Training) fitness(strategy EvaluationStrategy, shapes []int32) i
 			shapes = shapes[1:]
 			round++
 		} else {
-			fmt.Println("dead")
 			break
 		}
 	}
-	fmt.Println("score:", round)
 	return round
 }
 
-func (training *Training) saveData() {
+func (training *Genetic) save() {
 	file, err := os.Create(training.fileName)
 	if err != nil {
 		log.Fatal(err)
@@ -145,8 +144,8 @@ func (training *Training) saveData() {
 
 func randomStrategy() EvaluationStrategy {
 	randomParam := func() float32 {
-		return rand.Float32()*200.0 - 100.0
+		return rand.Float32()*2.0 - 1.0
 	}
-	strategy := EvaluationStrategy{[4]float32{randomParam(), randomParam(), randomParam(), randomParam()}}
+	strategy := NewEvaluationStrategy(randomParam(), randomParam(), randomParam(), randomParam())
 	return strategy
 }

@@ -203,8 +203,6 @@ var shapeColumnTable = [kShapeSize][]int32{
 var columnHeightTable = [kColumnTableSize]int32{}
 var columnHoleTable = [kColumnTableSize]int32{}
 
-var lineScoreTable = [5]int32{0, 10, 22, 36, 56}
-
 func init() {
 	for n := uint32(0); n < kColumnTableSize; n++ {
 		columnHeightTable[n] = int32(bits.Len32(n))

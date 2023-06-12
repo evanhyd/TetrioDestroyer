@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 
+	"git.tcp.direct/kayos/sendkeys"
 	"github.com/kbinani/screenshot"
 )
 
@@ -23,7 +24,7 @@ var shapeColors = []color.RGBA{
 
 var colorShapeID = []int32{I90Shape, J90Shape, L270Shape, O0Shape, T180Shape, S0Shape, Z0Shape, BlockerShape, EmptyShape}
 
-func getShape(c color.RGBA) int32 {
+func predictShapeByColor(c color.RGBA) int32 {
 	colorID := EmptyShape
 	mDiff := int32(math.MaxInt32)
 	for i := range shapeColors {
@@ -47,7 +48,7 @@ func getTetrioBoardImage() (*image.RGBA, error) {
 	return screenshot.Capture(kX, kY, kWidth, kHeight)
 }
 
-func getTetrioShapesImage() (*image.RGBA, error) {
+func GetTetrioShapesImage() (*image.RGBA, error) {
 	const (
 		kX, kY          = 1150, 300
 		kWidth, kHeight = 140, 455
@@ -76,7 +77,7 @@ func GetTetrioBoard() ([][]uint32, int32) {
 Loop:
 	for y = blockY / 2; y < img.Rect.Dy(); y += blockY {
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
-			if shape := getShape(img.RGBAAt(x, y)); shape != EmptyShape {
+			if shape := predictShapeByColor(img.RGBAAt(x, y)); shape != EmptyShape {
 				currentShape = shape
 				break Loop
 			}
@@ -97,7 +98,7 @@ Loop:
 	for y += blockY * int(shapeHeightTable[currentShape]+1); y < img.Rect.Dy(); y += blockY {
 		i := kRow - (y / blockY) - 1
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
-			if getShape(img.RGBAAt(x, y)) != EmptyShape {
+			if predictShapeByColor(img.RGBAAt(x, y)) != EmptyShape {
 				board[i][x/blockX] = 1
 			}
 		}
@@ -109,10 +110,10 @@ Loop:
 func GetTetrioShapes() []int32 {
 	const (
 		kRow    = 5
-		kColumn = 5
+		kColumn = 10
 	)
 
-	img, err := getTetrioShapesImage()
+	img, err := GetTetrioShapesImage()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,11 +123,32 @@ func GetTetrioShapes() []int32 {
 	shapes := []int32{}
 	for y := blockY / 2; y < img.Rect.Dy(); y += blockY {
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
-			if shape := getShape(img.RGBAAt(x, y)); shape != EmptyShape {
+			if shape := predictShapeByColor(img.RGBAAt(x, y)); shape != EmptyShape {
 				shapes = append(shapes, shape)
 				break
 			}
 		}
 	}
 	return shapes
+}
+
+func SendMove(result Result, currentShape int32) {
+	period := int32(len(variationTable[currentShape]))
+	rotation := (result.Shape - currentShape + period) % period
+
+	keyboard, err := sendkeys.NewKBWrapWithOptions()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	input := ""
+	for r := int32(0); r < rotation; r++ {
+		input += "r"
+	}
+	input += "aaaaaa"
+	for c := int32(0); c < result.Column; c++ {
+		input += "d"
+	}
+	input += "w"
+	keyboard.Type(input)
 }

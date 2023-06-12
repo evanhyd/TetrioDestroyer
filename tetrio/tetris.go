@@ -14,7 +14,8 @@ type Tetris struct {
 }
 
 func NewTetris() Tetris {
-	return Tetris{EvaluationStrategy: NewEvaluationStrategy(-17.943802, -45.524887, -100.4868, -39.00439)}
+	// return Tetris{EvaluationStrategy: NewEvaluationStrategy(-17.943802, -45.524887, -100.4868, -39.00439)}
+	return Tetris{EvaluationStrategy: NewEvaluationStrategy(0.10710144, -25.082375, -91.383804, 70.28813)}
 }
 
 func (tetris *Tetris) String() string {
@@ -77,7 +78,7 @@ func (tetris *Tetris) MakeMove(shape int32, column int32) bool {
 	return false
 }
 
-func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
+func (tetris *Tetris) FindMove(availableShapes []int32) Result {
 
 	var search func(tetris *Tetris, depth int) float32
 	search = func(tetris *Tetris, depth int) float32 {
@@ -88,30 +89,30 @@ func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
 		mScore := float32(-math.MaxFloat32)
 		for _, variation := range variationTable[availableShapes[depth]] {
 			for _, column := range shapeColumnTable[variation] {
-				tetris.saveState()
+				tetris.save()
 				if tetris.MakeMove(variation, column) {
 					if score := search(tetris, depth+1); score > mScore {
 						mScore = score
 					}
 				}
-				tetris.revertState()
+				tetris.revert()
 			}
 		}
 		return mScore
 	}
 
-	results := make(chan SearchResult, 4*10)
+	results := make(chan Result, 4*10)
 	waits := sync.WaitGroup{}
 
 	for _, variation := range variationTable[availableShapes[0]] {
 		waits.Add(len(shapeColumnTable[variation]))
 		for _, column := range shapeColumnTable[variation] {
 			go func(tetris Tetris, shape int32, column int32) {
-				tetris.saveState()
+				tetris.save()
 				if tetris.MakeMove(shape, column) {
-					results <- SearchResult{shape, column, search(&tetris, 1)}
+					results <- Result{shape, column, search(&tetris, 1)}
 				}
-				tetris.revertState()
+				tetris.revert()
 				waits.Done()
 			}(*tetris, variation, column)
 		}
@@ -122,7 +123,7 @@ func (tetris *Tetris) FindMove(availableShapes []int32) SearchResult {
 
 	//reset the line cleared
 	tetris.score = 0
-	bestResult := NoResult()
+	bestResult := EmptyResult()
 	for result := range results {
 		if result.Eval > bestResult.Eval {
 			bestResult = result

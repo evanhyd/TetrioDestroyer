@@ -2,16 +2,25 @@ package main
 
 import (
 	"fmt"
+	"image/png"
 	"math"
 	"math/rand"
+	"os"
 	"tetriodestroyer/tetrio"
 	"time"
 )
 
+func main() {
+	// training := tetrio.NewTraining("weights.txt", 1000, 0.10, 0.20, 10000)
+	// training.Train()
+	// PlayTest()
+	PlayTetrio()
+}
+
 func PlayTest() {
 	const (
 		kRound = math.MaxInt
-		kDepth = 5
+		kDepth = 4
 	)
 
 	tetris := tetrio.NewTetris()
@@ -35,19 +44,22 @@ func PlayTest() {
 	}
 }
 
-func main() {
-	// training := tetrio.NewTraining("weights.txt", 100, 0.05, 0.02, 50000)
-	// training.Train()
-	// PlayTest()
-	PlayTetrio()
-}
-
 func PlayTetrio() {
 	const kDepth = 5
 	tetris := tetrio.NewTetris()
 	for {
 		if board, currentShape := tetrio.GetTetrioBoard(); board != nil {
 			if shapes := tetrio.GetTetrioShapes(); len(shapes) == 5 {
+
+				for _, shape := range shapes {
+					if shape < 0 {
+						img, _ := tetrio.GetTetrioShapesImage()
+						file, _ := os.Create("tetrioShapes.png")
+						png.Encode(file, img)
+						file.Close()
+					}
+				}
+
 				shapes = append([]int32{currentShape}, shapes...)
 				fmt.Println(shapes)
 
@@ -57,7 +69,7 @@ func PlayTetrio() {
 				if !result.IsDead() {
 					tetrio.SendMove(result, currentShape)
 					fmt.Printf("%+v\n", result)
-					time.Sleep(50 * time.Millisecond)
+					time.Sleep(10 * time.Millisecond)
 				}
 			}
 		}
