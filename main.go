@@ -2,12 +2,9 @@ package main
 
 import (
 	"fmt"
-	"image/png"
 	"math"
 	"math/rand"
-	"os"
 	"tetriodestroyer/tetrio"
-	"time"
 )
 
 func main() {
@@ -45,31 +42,22 @@ func PlayTest() {
 }
 
 func PlayTetrio() {
-	const kDepth = 5
+	const kDepth = 4
 	tetris := tetrio.NewTetris()
 	for {
 		if board, currentShape := tetrio.GetTetrioBoard(); board != nil {
-			if shapes := tetrio.GetTetrioShapes(); len(shapes) == 5 {
+			shapes := append([]int32{currentShape}, tetrio.GetTetrioShapes()...)
 
-				for _, shape := range shapes {
-					if shape < 0 {
-						img, _ := tetrio.GetTetrioShapesImage()
-						file, _ := os.Create("tetrioShapes.png")
-						png.Encode(file, img)
-						file.Close()
-					}
-				}
-
-				shapes = append([]int32{currentShape}, shapes...)
-				fmt.Println(shapes)
-
+			if len(shapes) >= kDepth {
+				// img, _ := tetrio.GetTetrioShapesImage()
+				// file, _ := os.Create("tetrioShapes.png")
+				// png.Encode(file, img)
+				// file.Close()
 				tetris.SetBoard(board)
 				result := tetris.FindMove(shapes[:kDepth])
 
 				if !result.IsDead() {
 					tetrio.SendMove(result, currentShape)
-					fmt.Printf("%+v\n", result)
-					time.Sleep(10 * time.Millisecond)
 				}
 			}
 		}

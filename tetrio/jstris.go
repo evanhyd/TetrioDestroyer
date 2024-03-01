@@ -1,6 +1,7 @@
 package tetrio
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -11,15 +12,15 @@ import (
 )
 
 var shapeColors = []color.RGBA{
-	{50, 180, 130, 255}, //I90
-	{83, 59, 206, 255},  //J90
-	{190, 120, 70, 255}, //L270
-	{180, 153, 50, 255}, //O0
-	{165, 62, 155, 255}, //T180
-	{131, 180, 50, 255}, //S0
-	{194, 63, 70, 255},  //Z0
-	{68, 68, 68, 255},   //Blocker
-	{0, 0, 0, 255},      //Empty
+	{15, 155, 215, 255},  //I
+	{33, 65, 198, 255},   //J
+	{227, 91, 2, 255},    //L
+	{227, 159, 2, 255},   //O
+	{175, 41, 138, 255},  //T
+	{89, 177, 1, 255},    //S
+	{215, 15, 55, 255},   //Z
+	{106, 106, 106, 255}, //Blocker
+	{0, 0, 0, 255},       //Empty
 }
 
 var colorShapeID = []int32{I90Shape, J90Shape, L270Shape, O0Shape, T180Shape, S0Shape, Z0Shape, BlockerShape, EmptyShape}
@@ -42,23 +43,23 @@ func predictShapeByColor(c color.RGBA) int32 {
 
 func getTetrioBoardImage() (*image.RGBA, error) {
 	const (
-		kX, kY          = 805, 175
-		kWidth, kHeight = 310, 715
+		kX, kY          = 503, 132
+		kWidth, kHeight = 300, 600
 	)
 	return screenshot.Capture(kX, kY, kWidth, kHeight)
 }
 
 func GetTetrioShapesImage() (*image.RGBA, error) {
 	const (
-		kX, kY          = 1150, 300
-		kWidth, kHeight = 140, 455
+		kX, kY          = 808, 134
+		kWidth, kHeight = 160, 422
 	)
 	return screenshot.Capture(kX, kY, kWidth, kHeight)
 }
 
 func GetTetrioBoard() ([][]uint32, int32) {
 	const (
-		kRow    = 23
+		kRow    = 20
 		kColumn = 10
 	)
 
@@ -66,6 +67,9 @@ func GetTetrioBoard() ([][]uint32, int32) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// file, _ := os.Create("board.png")
+	// png.Encode(file, img)
+	// file.Close()
 
 	blockY := img.Rect.Dy() / kRow
 	blockX := img.Rect.Dx() / kColumn
@@ -79,6 +83,7 @@ Loop:
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
 			if shape := predictShapeByColor(img.RGBAAt(x, y)); shape != EmptyShape {
 				currentShape = shape
+				fmt.Println(img.RGBAAt(x, y))
 				break Loop
 			}
 		}
@@ -143,9 +148,9 @@ func SendMove(result Result, currentShape int32) {
 
 	input := ""
 	for r := int32(0); r < rotation; r++ {
-		input += "r"
+		input += "e"
 	}
-	input += "aaaaaa"
+	input += "aaaaaaaa"
 	for c := int32(0); c < result.Column; c++ {
 		input += "d"
 	}
