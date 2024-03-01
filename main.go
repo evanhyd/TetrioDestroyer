@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"tetriodestroyer/tetrio"
+	"time"
 )
 
 func main() {
@@ -29,7 +30,6 @@ func PlayTest() {
 
 	for round := 0; round < kRound; round++ {
 		result := tetris.FindMove(shapes)
-		// fmt.Println(&tetris)
 		fmt.Printf("Result %+v - %v\n", result, round)
 		if !result.IsDead() {
 			tetris.MakeMove(result.Shape, result.Column)
@@ -42,6 +42,7 @@ func PlayTest() {
 }
 
 func PlayTetrio() {
+	time.Sleep(1 * time.Second)
 	const kDepth = 4
 	tetris := tetrio.NewTetris()
 	for {

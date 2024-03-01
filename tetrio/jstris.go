@@ -1,14 +1,14 @@
 package tetrio
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
 	"math"
+	"time"
 
-	"git.tcp.direct/kayos/sendkeys"
 	"github.com/kbinani/screenshot"
+	"github.com/micmonay/keybd_event"
 )
 
 var shapeColors = []color.RGBA{
@@ -83,7 +83,6 @@ Loop:
 		for x := blockX / 2; x < img.Rect.Dx(); x += blockX {
 			if shape := predictShapeByColor(img.RGBAAt(x, y)); shape != EmptyShape {
 				currentShape = shape
-				fmt.Println(img.RGBAAt(x, y))
 				break Loop
 			}
 		}
@@ -141,19 +140,25 @@ func SendMove(result Result, currentShape int32) {
 	period := int32(len(variationTable[currentShape]))
 	rotation := (result.Shape - currentShape + period) % period
 
-	keyboard, err := sendkeys.NewKBWrapWithOptions()
-	if err != nil {
-		log.Fatal(err)
+	kb, _ := keybd_event.NewKeyBonding()
+
+	kb.SetKeys(keybd_event.VK_E)
+	for r := int32(0); r < rotation; r++ {
+		kb.Launching()
 	}
 
-	input := ""
-	for r := int32(0); r < rotation; r++ {
-		input += "e"
+	kb.SetKeys(keybd_event.VK_A)
+	for r := int32(0); r < 6; r++ {
+		kb.Launching()
 	}
-	input += "aaaaaaaa"
+
+	kb.SetKeys(keybd_event.VK_D)
 	for c := int32(0); c < result.Column; c++ {
-		input += "d"
+		kb.Launching()
 	}
-	input += "w"
-	keyboard.Type(input)
+
+	kb.SetKeys(keybd_event.VK_W)
+	kb.Press()
+	time.Sleep(30 * time.Millisecond)
+	kb.Release()
 }
