@@ -159,6 +159,6 @@ func SendMove(result Result, currentShape int32) {
 
 	kb.SetKeys(keybd_event.VK_W)
 	kb.Press()
-	time.Sleep(30 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	kb.Release()
 }

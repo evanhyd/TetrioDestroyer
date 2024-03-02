@@ -13,5 +13,5 @@ Rotate 180: r
 Hold: c  
 
 ## Game settings
-Grid: None 
-Ghost: Disabled 
+Grid: None  
+Ghost: Disabled  
